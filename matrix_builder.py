@@ -30,13 +30,19 @@ def normalize(shape):
     min_c = min(c for r, c in shape)
     return [(r - min_r, c - min_c) for r, c in shape]
 
+def reflect(shape):
+    return [(r, -c) for r, c in shape]
+
 def orientations(shape):
     seen = set()
-    cur = shape
-    for _ in range(4):
-        cur = rotate(cur)
-        norm = tuple(sorted(normalize(cur)))
-        seen.add(norm)
+
+    for base in (shape, reflect(shape)):
+        cur = base
+        for _ in range(4):
+            norm = tuple(sorted(normalize(cur)))
+            seen.add(norm)
+            cur = rotate(cur)
+
     return [list(o) for o in seen]
 
 def valid_placement(shape, top, left):
