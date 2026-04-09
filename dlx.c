@@ -16,10 +16,14 @@ struct Column {
     size_t n;
 };
 
+#define MAX_NODES (1024*1024)
+static Node nodes[MAX_NODES] = {0};
+static size_t nodes_ptr = 0;
+
 Node* new_node(Column *c)
 {
-    Node *n = malloc(sizeof(Node));
-    assert(n);
+    assert(nodes_ptr < MAX_NODES);
+    Node *n = &nodes[nodes_ptr++];
     n->l = n->r = n->u = n->d = n;
     n->c = c;
     return n;
@@ -86,13 +90,8 @@ Node* parse_matrix_from_file(size_t *nrows, size_t *ncols, size_t *nmand)
     Column *columns = malloc(*ncols * sizeof(Column));
     assert(columns);
 
-    Node *root = malloc(sizeof(Node));
-    assert(root);
+    Node *root = new_node(NULL);
 
-    root->l = root->r = root;
-    root->u = root->d = root;
-    root->c = NULL;
-    
     for(size_t i = 0; i < *nmand; ++i)
     {
         columns[i].s = 0;
@@ -221,10 +220,11 @@ void search(Node *root, Node **o, size_t k)
 int main(void)
 {
     size_t nrows, ncols, nmand;
-    Node *matrix = parse_matrix_from_file( &nrows, &ncols, &nmand);
+    Node *matrix = parse_matrix_from_file(&nrows, &ncols, &nmand);
     Node **o = malloc(sizeof(Node*) * ncols);
     assert(o);
     search(matrix, o, 0);
+    free(o);
 
     return 0;
 }
