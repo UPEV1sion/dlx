@@ -2,8 +2,6 @@
 #include <stdlib.h>
 #include <assert.h>
 
-#define shift_args(argc, argv) ((argc)--, *(argv)++)
-
 typedef struct Column Column;
 typedef struct Node Node;
 
@@ -80,14 +78,11 @@ void uncover_column(Column *c)
     c->header.l->r = &c->header;
 }
 
-Node* parse_matrix_from_file(const char *path, size_t *nrows, size_t *ncols, size_t *npieces)
+Node* parse_matrix_from_file(size_t *nrows, size_t *ncols, size_t *nmand)
 {
-    FILE *f;
-    assert((f = fopen(path, "r")) != NULL);
-
-    fscanf(f, "%zu", nrows);
-    fscanf(f, "%zu", ncols);
-    fscanf(f, "%zu", npieces);
+    assert(scanf("%zu", nrows) == 1);
+    assert(scanf("%zu", ncols) == 1);
+    assert(scanf("%zu", nmand) == 1);
     Column *columns = malloc(*ncols * sizeof(Column));
     assert(columns);
 
@@ -98,10 +93,10 @@ Node* parse_matrix_from_file(const char *path, size_t *nrows, size_t *ncols, siz
     root->u = root->d = root;
     root->c = NULL;
     
-    for(size_t i = 0; i < *ncols; ++i)
+    for(size_t i = 0; i < *nmand; ++i)
     {
         columns[i].s = 0;
-        columns[i].n= i;
+        columns[i].n = i;
         columns[i].header.c = &columns[i];
         columns[i].header.u = &columns[i].header;
         columns[i].header.d = &columns[i].header;
@@ -112,8 +107,19 @@ Node* parse_matrix_from_file(const char *path, size_t *nrows, size_t *ncols, siz
         root->r = &columns[i].header;
     }
 
+    for(size_t i = *nmand; i < *ncols; ++i)
+    {
+        columns[i].s = 0;
+        columns[i].n = i;
+        columns[i].header.c = &columns[i];
+        columns[i].header.u = &columns[i].header;
+        columns[i].header.d = &columns[i].header;
+        columns[i].header.l = &columns[i].header;
+        columns[i].header.r = &columns[i].header;
+    }
+
     char line[1024];
-    while(fgets(line, sizeof line, f))
+    while(fgets(line, sizeof line, stdin))
     {
         size_t count = 0;
         size_t positions[128];
@@ -145,8 +151,6 @@ Node* parse_matrix_from_file(const char *path, size_t *nrows, size_t *ncols, siz
         link_row(row_nodes, count);
         free(row_nodes);
     }
-
-    fclose(f);
 
     return root;
 }
@@ -214,20 +218,10 @@ void search(Node *root, Node **o, size_t k)
     uncover_column(c);
 }
 
-int main(int argc, char **argv)
+int main(void)
 {
-    const char *program = shift_args(argc, argv);
-    if(argc <= 0)
-    {
-        fprintf(stderr, "USAGE: %s <matrix>\n", program);
-        return 1;
-    }
-
-    const char *path = shift_args(argc, argv);
-    size_t nrows;
-    size_t ncols;
-    size_t npieces;
-    Node *matrix = parse_matrix_from_file(path, &nrows, &ncols, &npieces);
+    size_t nrows, ncols, nmand;
+    Node *matrix = parse_matrix_from_file( &nrows, &ncols, &nmand);
     Node **o = malloc(sizeof(Node*) * ncols);
     assert(o);
     search(matrix, o, 0);

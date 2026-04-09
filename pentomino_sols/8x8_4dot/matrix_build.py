@@ -80,7 +80,7 @@ def generate_rows():
     return rows
 
 rows = generate_rows()
-
-print(len(rows), 72, len(pieces))
+# nrows ncols nmand
+print(len(rows), 72, 72)
 for row in rows:
     print(*row)
