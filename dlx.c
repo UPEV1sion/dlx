@@ -2,6 +2,9 @@
 #include <stdlib.h>
 #include <assert.h>
 
+#define MAX_COLS 1024
+#define MAX_NODES (MAX_COLS * 1024)
+
 typedef struct Column Column;
 typedef struct Node Node;
 
@@ -16,18 +19,12 @@ struct Column {
     size_t n;
 };
 
-#define MAX_NODES (1024*1024)
-static Node nodes[MAX_NODES] = {0};
-static size_t nodes_ptr = 0;
+typedef struct {
+    Node *root;
+    Column *columns;    
+} DLX;
 
-Node* new_node(Column *c)
-{
-    assert(nodes_ptr < MAX_NODES);
-    Node *n = &nodes[nodes_ptr++];
-    n->l = n->r = n->u = n->d = n;
-    n->c = c;
-    return n;
-}
+Node* new_node(Column *c);
 
 void columns_add_node(Column *c, Node *n)
 {
@@ -82,46 +79,47 @@ void uncover_column(Column *c)
     c->header.l->r = &c->header;
 }
 
-Node* parse_matrix_from_file(size_t *nrows, size_t *ncols, size_t *nmand)
+DLX parse_dlx_from_file(size_t *nrows, size_t *ncols, size_t *nmand)
 {
+    DLX dlx;
     assert(scanf("%zu", nrows) == 1);
     assert(scanf("%zu", ncols) == 1);
     assert(scanf("%zu", nmand) == 1);
-    Column *columns = malloc(*ncols * sizeof(Column));
-    assert(columns);
+    dlx.columns = malloc(*ncols * sizeof(Column));
+    assert(dlx.columns);
 
-    Node *root = new_node(NULL);
+    dlx.root = new_node(NULL);
 
     for(size_t i = 0; i < *nmand; ++i)
     {
-        columns[i].s = 0;
-        columns[i].n = i;
-        columns[i].header.c = &columns[i];
-        columns[i].header.u = &columns[i].header;
-        columns[i].header.d = &columns[i].header;
-        columns[i].header.l = root;
-        columns[i].header.r = root->r;
+        dlx.columns[i].s = 0;
+        dlx.columns[i].n = i;
+        dlx.columns[i].header.c = &dlx.columns[i];
+        dlx.columns[i].header.u = &dlx.columns[i].header;
+        dlx.columns[i].header.d = &dlx.columns[i].header;
+        dlx.columns[i].header.l = dlx.root;
+        dlx.columns[i].header.r = dlx.root->r;
 
-        root->r->l = &columns[i].header;
-        root->r = &columns[i].header;
+        dlx.root->r->l = &dlx.columns[i].header;
+        dlx.root->r = &dlx.columns[i].header;
     }
 
     for(size_t i = *nmand; i < *ncols; ++i)
     {
-        columns[i].s = 0;
-        columns[i].n = i;
-        columns[i].header.c = &columns[i];
-        columns[i].header.u = &columns[i].header;
-        columns[i].header.d = &columns[i].header;
-        columns[i].header.l = &columns[i].header;
-        columns[i].header.r = &columns[i].header;
+        dlx.columns[i].s = 0;
+        dlx.columns[i].n = i;
+        dlx.columns[i].header.c = &dlx.columns[i];
+        dlx.columns[i].header.u = &dlx.columns[i].header;
+        dlx.columns[i].header.d = &dlx.columns[i].header;
+        dlx.columns[i].header.l = &dlx.columns[i].header;
+        dlx.columns[i].header.r = &dlx.columns[i].header;
     }
 
-    char line[1024];
+    char line[MAX_COLS * 2];
     while(fgets(line, sizeof line, stdin))
     {
         size_t count = 0;
-        size_t positions[128];
+        size_t positions[MAX_COLS];
 
         size_t idx;
         char *ptr = line;
@@ -136,22 +134,19 @@ Node* parse_matrix_from_file(size_t *nrows, size_t *ncols, size_t *nmand)
         
         if(count == 0) continue;
 
-        Node **row_nodes = malloc(count * sizeof(Node*));
-        assert(row_nodes);
-
+        Node *row_nodes[MAX_COLS];
         for(size_t i = 0; i < count; ++i)
         {
-            Column *col = columns + positions[i];
+            Column *col = dlx.columns + positions[i];
             Node *n = new_node(col);
             columns_add_node(col, n);
             row_nodes[i] = n;
         }
 
         link_row(row_nodes, count);
-        free(row_nodes);
     }
 
-    return root;
+    return dlx;
 }
 
 Node* choose_column(Node *root)
@@ -185,15 +180,15 @@ void print_solution(Node **o, const size_t k)
     printf("\n");
 }
 
-void search(Node *root, Node **o, size_t k)
+void search(DLX dlx, Node **o, size_t k)
 {
-    if(root == root->r) 
+    if(dlx.root == dlx.root->r) 
     {
         print_solution(o, k);
         return;
     }
     
-    Node *c_node = choose_column(root);
+    Node *c_node = choose_column(dlx.root);
     Column *c = c_node->c;
     cover_column(c);
 
@@ -206,7 +201,7 @@ void search(Node *root, Node **o, size_t k)
             cover_column(j->c);
         }
 
-        search(root, o, k + 1);
+        search(dlx, o, k + 1);
 
         for(Node *j = r->l; j != r; j = j->l)
         {
@@ -220,11 +215,24 @@ void search(Node *root, Node **o, size_t k)
 int main(void)
 {
     size_t nrows, ncols, nmand;
-    Node *matrix = parse_matrix_from_file(&nrows, &ncols, &nmand);
+    DLX dlx = parse_dlx_from_file(&nrows, &ncols, &nmand);
     Node **o = malloc(sizeof(Node*) * ncols);
     assert(o);
-    search(matrix, o, 0);
+    search(dlx, o, 0);
     free(o);
+    free(dlx.columns);
 
     return 0;
+}
+
+static Node node_pool[MAX_NODES];
+static size_t node_ptr = 0;
+
+Node* new_node(Column *c)
+{
+    assert(node_ptr <= MAX_NODES);
+    Node *n = &node_pool[node_ptr++];
+    n->l = n->r = n->u = n->d = n;
+    n->c = c;
+    return n;
 }
