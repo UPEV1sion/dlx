@@ -1,6 +1,7 @@
 *
 
 !*.c
+!example.ppm
 !*.py
 !*.sh
 !*.md
