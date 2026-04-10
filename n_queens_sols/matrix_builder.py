@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
+
 import sys
 
-if len(sys.argv) != 2:
-    print("Usage: python3 parse_dlx.py N")
-    sys.exit(1)
-N = int(sys.argv[1])
+N = 8
+
+if len(sys.argv) == 2:
+    N = int(sys.argv[1])
 
 ncols = 6*N - 2
 print(N * N, ncols, 2*N)

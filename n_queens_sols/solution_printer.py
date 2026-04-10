@@ -25,7 +25,6 @@ def parse_solutions(lines, N):
 
 
 def decode_solution(sol, N):
-    """Convert DLX rows into (row, col) positions"""
     positions = []
 
     for row_data in sol:
@@ -58,11 +57,10 @@ def print_board(positions, N):
 
 
 def main():
-    if len(sys.argv) != 2:
-        print("Usage: python3 parse_dlx.py N")
-        sys.exit(1)
-
-    N = int(sys.argv[1])
+    if len(sys.argv) == 2:
+        N = int(sys.argv[1])
+    else:
+        N = 8
 
     lines = sys.stdin.readlines()
     solutions = parse_solutions(lines, N)
