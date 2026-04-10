@@ -1,7 +1,7 @@
 *
 
 !*.c
-!example.ppm
+!example.png
 !*.py
 !*.sh
 !*.md
