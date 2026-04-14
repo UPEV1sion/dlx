@@ -1,6 +1,6 @@
-# Dacing Links in C
+# Dancing Links in C
 
-This is a C implementation of Donald Knuth's [Dacing Links (DLX)](https://arxiv.org/pdf/cs/0011047) algorithm.
+This is a C implementation of Donald Knuth's [Dancing Links (DLX)](https://arxiv.org/pdf/cs/0011047) algorithm.
 This implementation is suited for solving exact cover problems like [Polyomino](https://de.wikipedia.org/wiki/Polyomino), the [N-Queens Problem](https://en.wikipedia.org/wiki/Eight_queens_puzzle), Sudoku and many more.
 
 ## Quick Start
