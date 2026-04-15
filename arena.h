@@ -77,7 +77,7 @@ ARDEF void* arena_alloc(Arena *arena, size_t nbytes)
 {
     const uintptr_t base = (uintptr_t) arena->items;
     const uintptr_t current = base + arena->count;
-    const uintptr_t aligned = arena__align_up(current + (uintptr_t) nbytes);    
+    const uintptr_t aligned = arena__align_up(current);    
     const uintptr_t aligned_offset = (aligned - base) + nbytes;
     if(aligned_offset > arena->capacity)
     {
