@@ -6,5 +6,6 @@
 !*.py
 !*.sh
 !*.md
+!*.hole
 !**/
 !.gitignore
