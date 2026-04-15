@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 #include <stdlib.h>
 #include <assert.h>
 
@@ -91,7 +93,7 @@ void uncover_column(Column *c)
 DLX parse_dlx_from_file(Arena *arena, size_t *nrows, size_t *ncols, size_t *nmand)
 {
     DLX dlx;
-    assert(scanf("%zu %zu %zu", nrows, ncols, nmand) == 3);
+    assert(scanf("%zu %zu %zu ", nrows, ncols, nmand) == 3);
     dlx.columns = arena_alloc(arena, *ncols * sizeof(Column));
     assert(dlx.columns);
 
@@ -128,17 +130,33 @@ DLX parse_dlx_from_file(Arena *arena, size_t *nrows, size_t *ncols, size_t *nman
         size_t count = 0;
         size_t positions[MAX_COLS];
 
-        size_t idx;
-        char *ptr = line;
-        while(sscanf(ptr, "%zu", &idx) == 1)
+        char *token = strtok(line, " \r\n\t");
+        while(token)
         {
-            positions[count++] = idx;
+            if(count >= MAX_COLS)
+            {
+                fprintf(stderr, "ERROR: too many columns in row\n");
+                exit(1);
+            }
 
-            
-            while(*ptr && *ptr != ' ') ptr++;
-            while(*ptr == ' ') ptr++;
+            char *end;
+            size_t idx = strtoull(token, &end, 10);
+            if(*end != 0)
+            {
+                fprintf(stderr, "ERROR: invalid index in matrix %s\n", token);
+                exit(1);
+            }
+
+            if(idx >= *ncols)
+            {
+                fprintf(stderr, "ERROR: index out of range %zu\n", idx);
+                exit(1);
+            }
+
+            positions[count++] = idx;
+            token = strtok(NULL, " \r\n\t");
         }
-        
+
         if(count == 0) continue;
 
         Node *row_nodes[MAX_COLS];
