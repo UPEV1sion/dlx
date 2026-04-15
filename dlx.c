@@ -2,8 +2,10 @@
 #include <stdlib.h>
 #include <assert.h>
 
+#define ARENA_IMPLEMENTATION
+#include "arena.h"
+
 #define MAX_COLS 1024
-#define MAX_NODES (MAX_COLS * 1024)
 
 typedef struct Column Column;
 typedef struct Node Node;
@@ -24,7 +26,14 @@ typedef struct {
     Column *columns;    
 } DLX;
 
-Node* new_node(Column *c);
+Node* node_new(Arena *arena, Column *c)
+{
+    Node *n = arena_alloc(arena, sizeof(Node));
+    assert(n);
+    n->l = n->r = n->u = n->d = n;
+    n->c = c;
+    return n;
+}
 
 void columns_add_node(Column *c, Node *n)
 {
@@ -79,16 +88,14 @@ void uncover_column(Column *c)
     c->header.l->r = &c->header;
 }
 
-DLX parse_dlx_from_file(size_t *nrows, size_t *ncols, size_t *nmand)
+DLX parse_dlx_from_file(Arena *arena, size_t *nrows, size_t *ncols, size_t *nmand)
 {
     DLX dlx;
-    assert(scanf("%zu", nrows) == 1);
-    assert(scanf("%zu", ncols) == 1);
-    assert(scanf("%zu", nmand) == 1);
-    dlx.columns = malloc(*ncols * sizeof(Column));
+    assert(scanf("%zu %zu %zu", nrows, ncols, nmand) == 3);
+    dlx.columns = arena_alloc(arena, *ncols * sizeof(Column));
     assert(dlx.columns);
 
-    dlx.root = new_node(NULL);
+    dlx.root = node_new(arena, NULL);
 
     for(size_t i = 0; i < *nmand; ++i)
     {
@@ -138,7 +145,7 @@ DLX parse_dlx_from_file(size_t *nrows, size_t *ncols, size_t *nmand)
         for(size_t i = 0; i < count; ++i)
         {
             Column *col = dlx.columns + positions[i];
-            Node *n = new_node(col);
+            Node *n = node_new(arena, col);
             columns_add_node(col, n);
             row_nodes[i] = n;
         }
@@ -180,7 +187,7 @@ void print_solution(Node **o, const size_t k)
     printf("\n");
 }
 
-void search(DLX dlx, Node **o, size_t k)
+void search(const DLX dlx, Node **o, const size_t k)
 {
     if(dlx.root == dlx.root->r) 
     {
@@ -214,25 +221,16 @@ void search(DLX dlx, Node **o, size_t k)
 
 int main(void)
 {
+    Arena *arena = arena_new();
+    assert(arena);
+
     size_t nrows, ncols, nmand;
-    DLX dlx = parse_dlx_from_file(&nrows, &ncols, &nmand);
-    Node **o = malloc(sizeof(Node*) * ncols);
+    const DLX dlx = parse_dlx_from_file(arena, &nrows, &ncols, &nmand);
+    Node **o = arena_alloc(arena, sizeof(Node*) * ncols);
     assert(o);
     search(dlx, o, 0);
-    free(o);
-    free(dlx.columns);
+
+    arena_free(arena);
 
     return 0;
-}
-
-static Node node_pool[MAX_NODES];
-static size_t node_ptr = 0;
-
-Node* new_node(Column *c)
-{
-    assert(node_ptr <= MAX_NODES);
-    Node *n = &node_pool[node_ptr++];
-    n->l = n->r = n->u = n->d = n;
-    n->c = c;
-    return n;
 }
