@@ -3,31 +3,6 @@
 
 #define ARRAY_LEN(a)(sizeof(a)/sizeof(a[0]))
 
-typedef enum {
-    O_HOR,
-    O_VER,
-} Orient;
-
-typedef struct {
-    int x, y;
-    Orient orient;
-} Stick;
-
-typedef struct {
-    Stick sticks[4];
-} Piece;
-
-// static Piece pieces[] = {
-//     {{{0,0,O_VER}, {0,1,O_VER}, {0,2,O_VER}, {0,3,O_VER}}}, // I
-//     {{{0,0,O_VER}, {0,1,O_VER}, {0,2,O_VER}, {0,0,O_HOR}}}, // L
-//     {{{0,0,O_VER}, {0,1,O_VER}, {0,2,O_VER}, {0,1,O_HOR}}}, // Y
-//     {{{0,0,O_VER}, {0,1,O_VER}, {0,2,O_HOR}, {1,2,O_VER}}}, // N
-//     {{{0,0,O_VER}, {0,1,O_VER}, {0,1,O_HOR}, {0,2,O_HOR}}}, // F
-//     {{{0,0,O_VER}, {0,1,O_VER}, {0,1,O_HOR}, {1,0,O_VER}}}, // H
-//     {{{0,0,O_VER}, {0,0,O_HOR}, {1,0,O_VER}, {1,1,O_VER}}}, // J
-//     {{{1,0,O_VER}, {1,1,O_VER}, {0,1,O_HOR}, {1,1,O_HOR}}}, // X
-// };
-
 static char *pieces[] = {
     "V00 V01 V02 V03 I01 I02 I03", // I
     "V00 V01 V02 H00 I01 I02",     // L
@@ -48,52 +23,87 @@ static char *pieces[] = {
 
 static char *names = "ILYNFHJXPURZOWV";
 
-int main(void)
+#define W 5
+#define H 5
+#define NUM_PIECES (ARRAY_LEN(pieces))
+#define NUM_H (W * (H - 1))
+#define NUM_V ((W - 1) * H)
+#define NUM_I ((W - 2) * (H - 2))
+
+#define PIECE_OFFSET 0
+#define HEDGE_OFFSET PIECE_OFFSET + NUM_PIECES
+#define VEDGE_OFFSET HEDGE_OFFSET + NUM_H
+#define INODE_OFFSET VEDGE_OFFSET + NUM_V
+
+#define NMAND NUM_PIECES + NUM_H + NUM_V
+#define NCOLS NMAND + NUM_I
+
+int H_index(const int x, const int y)
 {
-    for(size_t i = 0; i < ARRAY_LEN(pieces); ++i)
+    return HEDGE_OFFSET + y * (W-1) + x;
+}
+
+int V_index(const int x, const int y)
+{
+    return VEDGE_OFFSET + y * W + x;
+}
+
+int I_index(const int x, const int y) 
+{
+    return INODE_OFFSET + (y-1)*(W-2) + (x-1);
+}
+
+void emit_row(int *cols, int count)
+{
+    for(int i = 0; i < count; ++i)
     {
-        char grid[7][7];
-        memset(grid, ' ', sizeof(grid));
-        
+        printf("%d ", cols[i]);
+    }
+    printf("\n");
+}
+
+void build_matrix(void)
+{
+    // TODO
+    printf("%d %d %d\n", (int) NUM_PIECES, (int) NCOLS, (int) NMAND); 
+
+    for(int p = 0; p < NUM_PIECES; ++p)
+    {
         char buf[128];
-        strcpy(buf, pieces[i]);
+        strcpy(buf, pieces[p]);
+
+        int cols[64];
+        int count = 0;
+
+        cols[count++] = PIECE_OFFSET + p;
+
+        int H_used[W][H] = {0};
+        int V_used[W][H] = {0};
+
         char *tok = strtok(buf, " ");
         while(tok)
         {
             char type = tok[0];
-            int x = (tok[1] - '0') * 2;
-            int y = (tok[2] - '0') * 2;
+            int x = tok[1] - '0';
+            int y = tok[2] - '0';
 
-            if(type == 'V')
+            switch(type)
             {
-                grid[y][x] = '|';
-                grid[y+1][x] = '|';
-            }
-            else if(type == 'H')
-            {
-                grid[y][x] = '-';
-                grid[y][x+1] = '-';
-            }
-            else
-            {
-                grid[y][x] = '+';
+                case 'H': cols[count++] = H_index(x, y); break;
+                case 'V': cols[count++] = V_index(x, y); break;
+                case 'I': cols[count++] = I_index(x, y); break;
+                default: break;
             }
 
-            tok = strtok(NULL, " ");
+            tok= strtok(NULL, " ");
         }
 
-        putchar(names[i]);
-        for (int y = 6; y >= 0; --y)
-        {
-            for (int x = 0; x < 7; ++x)
-            {
-                putchar(grid[y][x]);
-            }
-            putchar('\n');
-        }
-
-        printf("\n\n");
+        emit_row(cols, count);
     }
+}
 
+int main(void)
+{
+    build_matrix();
     return 0;
 }
