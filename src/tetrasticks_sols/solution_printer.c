@@ -1,0 +1,204 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdbool.h>
+
+#define shift_args(argc, argv) ((argc)--, *(argv)++)
+
+#define WIDTH 6
+#define HEIGHT 6
+
+#define NUM_PIECES 15
+#define NUM_H (WIDTH * (HEIGHT - 1))
+#define NUM_V ((WIDTH - 1) * HEIGHT)
+#define NUM_I ((WIDTH - 2) * (HEIGHT - 2))
+
+#define PIECE_OFFSET 0
+#define HEDGE_OFFSET (PIECE_OFFSET + NUM_PIECES)
+#define VEDGE_OFFSET (HEDGE_OFFSET + NUM_H)
+#define INODE_OFFSET (VEDGE_OFFSET + NUM_V)
+
+#define SCALE 40
+#define MARGIN 20
+#define THICKNESS 3
+
+typedef struct {
+    int x, y;
+} Coord;
+
+typedef struct {
+    int kind;
+
+    Coord h[WIDTH * HEIGHT]; size_t hc;
+    Coord v[WIDTH * HEIGHT]; size_t vc;
+    Coord i[WIDTH * HEIGHT]; size_t ic;
+} Piece;
+
+static const int colors[][3] = {
+    {255, 0, 0}, {0, 255, 0}, {0, 0, 255}, {255, 255, 0},
+    {255, 0, 255}, {0, 255, 255}, {255, 128, 0}, {128, 0, 255},
+    {0, 128, 255}, {128, 255, 0}, {255, 0, 128}, {0, 255, 128},
+    {200, 100, 50}, {50, 200, 100}, {100, 50, 200}, {200, 50, 100}
+};
+
+#define NUM_COLORS (sizeof(colors)/sizeof(colors[0]))
+
+int abs(int a){ return a < 0 ? -a : a; }
+
+Coord H_decode(int idx)
+{
+    idx -= HEDGE_OFFSET;
+    return (Coord){
+        .x = idx % (WIDTH - 1),
+        .y = idx / (WIDTH - 1)
+    };
+}
+
+Coord V_decode(int idx)
+{
+    idx -= VEDGE_OFFSET;
+    return (Coord){
+        .x = idx % WIDTH,
+        .y = idx / WIDTH
+    };
+}
+
+Coord I_decode(int idx)
+{
+    idx -= INODE_OFFSET;
+    return (Coord){
+        .x = (idx % (WIDTH - 2)) + 1,
+        .y = (idx / (WIDTH - 2)) + 1
+    };
+}
+
+void draw_solution(Piece *pieces, int count, const char *filename)
+{
+    const int img_w = (WIDTH - 1) * SCALE + 2 * MARGIN;
+    const int img_h = (HEIGHT - 1) * SCALE + 2 * MARGIN;
+
+    FILE *f = fopen(filename, "w");
+    if (!f) return;
+
+    fprintf(f, "P3\n%d %d\n255\n", img_w, img_h);
+
+    for(int y = 0; y < img_h; y++)
+    {
+        for(int x = 0; x < img_w; x++)
+        {
+            int r = 240, g = 240, b = 240;
+
+            for(int p = 0; p < count; p++)
+            {
+                Piece *pc = &pieces[p];
+                const int *col = colors[pc->kind % NUM_COLORS];
+
+                for(size_t i = 0; i < pc->hc; i++)
+                {
+                    int sx = MARGIN + pc->h[i].x * SCALE;
+                    int sy = MARGIN + pc->h[i].y * SCALE;
+
+                    if(x >= sx && x <= sx + SCALE && abs(y - sy) <= THICKNESS)
+                    {
+                        r = col[0] / 2;
+                        g = col[1] / 2;
+                        b = col[2] / 2;
+                    }
+                }
+
+                for(size_t i = 0; i < pc->vc; i++)
+                {
+                    int sx = MARGIN + pc->v[i].x * SCALE;
+                    int sy = MARGIN + pc->v[i].y * SCALE;
+
+                    if(y >= sy && y <= sy + SCALE && abs(x - sx) <= THICKNESS)
+                    {
+                        r = col[0] / 2;
+                        g = col[1] / 2;
+                        b = col[2] / 2;
+                    }
+                }
+
+                for(size_t i = 0; i < pc->ic; i++)
+                {
+                    int ix = MARGIN + pc->i[i].x * SCALE;
+                    int iy = MARGIN + pc->i[i].y * SCALE;
+
+                    if(abs(x - ix) <= 4 && abs(y - iy) <= 4)
+                    {
+                        r = g = b = 0;
+                    }
+                }
+            }
+
+            fprintf(f, "%d %d %d ", r, g, b);
+        }
+        fprintf(f, "\n");
+    }
+
+    fclose(f);
+}
+
+int main(int argc, char **argv)
+{
+    char line[1024];
+
+    Piece solution[64];
+    int sol_count = 0;
+    int sol_id = 0;
+
+    char prefix[256] = {0};
+    if(argc >= 2)
+    {
+        strncpy(prefix, argv[1], sizeof(prefix) - 1);
+        const size_t len = strlen(prefix);
+        if(prefix[len - 1] != '/')
+        {
+            prefix[len] = '/';
+            prefix[len + 1] = 0;
+        }
+    }
+
+    while(fgets(line, sizeof(line), stdin))
+    {
+        if(strlen(line) <= 1)
+        {
+            char name[1024];
+            snprintf(name, sizeof(name), "%ssolution_%d.ppm", prefix, sol_id++);
+            draw_solution(solution, sol_count, name);
+            sol_count = 0;
+            continue;
+        }
+
+        Piece p = {0};
+
+        const char *tok = strtok(line, " \n");
+        while(tok)
+        {
+            const int idx = atoi(tok);
+
+            if(idx < NUM_PIECES)
+            {
+                p.kind = idx;
+            }
+            else if(idx < VEDGE_OFFSET)
+            {
+                p.h[p.hc++] = H_decode(idx);
+            }
+            else if(idx < INODE_OFFSET)
+            {
+                p.v[p.vc++] = V_decode(idx);
+            }
+            else
+            {
+                p.i[p.ic++] = I_decode(idx);
+            }
+
+            tok = strtok(NULL, " \n");
+        }
+
+        solution[sol_count++] = p;
+    }
+
+    return 0;
+}
