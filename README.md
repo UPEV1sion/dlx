@@ -1,14 +1,20 @@
 # Dancing Links in C
 
 This is a C implementation of Donald Knuth's [Dancing Links (DLX)](https://arxiv.org/pdf/cs/0011047) algorithm.
-This implementation is suited for solving exact cover problems like [Polyomino](https://de.wikipedia.org/wiki/Polyomino), the [N-Queens Problem](https://en.wikipedia.org/wiki/Eight_queens_puzzle), Sudoku and many more.
+This implementation is suited for solving exact cover problems like [Polyomino](https://de.wikipedia.org/wiki/Polyomino), the [N-Queens Problem](https://en.wikipedia.org/wiki/Eight_queens_puzzle), [Tetrasticks](https://en.wikipedia.org/wiki/Polystick), Sudoku and many more.
 
 ## Quick Start
 ```console
-$ ./build.sh
+$ make pentomino
 ```
 
-The implementation itself reads from `stdin` and outputs solution to `stdout`.
+There are several convenience Makefile targets like "pentomino", "n\_queen" and "tetrastick", which automatically build and run the whole pipeline of matrix generation, puzzle solving (dlx) and solution printing/visualization.
+The solutions will be put in `out` or to `stdout`, whatever is more appropiate.
+In the case of tetrasticks and pentominos `.ppm` images will be created.
+
+## Creating/Customizing puzzles
+
+The dlx implementation itself reads from `stdin` and outputs solution to `stdout`.
 The input must cohere to the following protocol:
 ```txt
 <number_rows> <number_columns> <number_mandatories>\n
