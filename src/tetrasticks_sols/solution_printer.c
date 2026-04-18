@@ -3,6 +3,8 @@
 #include <string.h>
 #include <stdbool.h>
 
+#define shift_args(argc, argv) ((argc)--, *(argv)++)
+
 #define WIDTH 6
 #define HEIGHT 6
 
@@ -91,7 +93,7 @@ void draw_solution(Piece *pieces, int count, const char *filename)
                 Piece *pc = &pieces[p];
                 const int *col = colors[pc->kind % NUM_COLORS];
 
-                for(int i = 0; i < pc->hc; i++)
+                for(size_t i = 0; i < pc->hc; i++)
                 {
                     int sx = MARGIN + pc->h[i].x * SCALE;
                     int sy = MARGIN + pc->h[i].y * SCALE;
@@ -104,7 +106,7 @@ void draw_solution(Piece *pieces, int count, const char *filename)
                     }
                 }
 
-                for(int i = 0; i < pc->vc; i++)
+                for(size_t i = 0; i < pc->vc; i++)
                 {
                     int sx = MARGIN + pc->v[i].x * SCALE;
                     int sy = MARGIN + pc->v[i].y * SCALE;
@@ -117,7 +119,7 @@ void draw_solution(Piece *pieces, int count, const char *filename)
                     }
                 }
 
-                for(int i = 0; i < pc->ic; i++)
+                for(size_t i = 0; i < pc->ic; i++)
                 {
                     int ix = MARGIN + pc->i[i].x * SCALE;
                     int iy = MARGIN + pc->i[i].y * SCALE;
@@ -137,7 +139,7 @@ void draw_solution(Piece *pieces, int count, const char *filename)
     fclose(f);
 }
 
-int main(void)
+int main(int argc, char **argv)
 {
     char line[1024];
 
@@ -145,12 +147,24 @@ int main(void)
     int sol_count = 0;
     int sol_id = 0;
 
+    char prefix[256] = {0};
+    if(argc >= 2)
+    {
+        strncpy(prefix, argv[1], sizeof(prefix) - 1);
+        const size_t len = strlen(prefix);
+        if(prefix[len - 1] != '/')
+        {
+            prefix[len] = '/';
+            prefix[len + 1] = 0;
+        }
+    }
+
     while(fgets(line, sizeof(line), stdin))
     {
         if(strlen(line) <= 1)
         {
-            char name[64];
-            sprintf(name, "solution_%d.ppm", sol_id++);
+            char name[1024];
+            snprintf(name, sizeof(name), "%ssolution_%d.ppm", prefix, sol_id++);
             draw_solution(solution, sol_count, name);
             sol_count = 0;
             continue;

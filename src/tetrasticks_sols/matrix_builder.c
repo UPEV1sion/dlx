@@ -375,7 +375,7 @@ void build_matrix(void)
 {
     printf("%d %d %d\n", (int) NROWS, (int) NCOLS, (int) NMAND);
 
-    for (int p = 0; p < NUM_PIECES; ++p)
+    for (size_t p = 0; p < NUM_PIECES; ++p)
     {
         Piece base = {0};
         parse_piece(&base, pieces[p]);
