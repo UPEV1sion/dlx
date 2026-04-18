@@ -3,10 +3,20 @@ CFLAGS := -Wall -Wextra -pedantic -O3 -march=native
 
 SRC := src
 OUT := out
+
+PENTOMINO_SOLVERS := $(SRC)/pentomino_sols
 TETRASTICK_SOLVERS := $(SRC)/tetrasticks_sols
+N_QUEEN_SOLVERS := $(SRC)/n_queens_sols
+
+PENTOMINO_BUILDER := $(PENTOMINO_SOLVERS)/matrix_builder.py
+PENTOMINO_PRINTER := $(PENTOMINO_SOLVERS)/solution_printer.py
+
+N_QUEENS_BUILDER := $(N_QUEEN_SOLVERS)/matrix_builder.py
+N_QUEENS_PRINTER := $(N_QUEEN_SOLVERS)/solution_printer.py
 
 TETRASTICK_BUILDER := $(OUT)/tetrasticks/tetra_builder
 TETRASTICK_PRINTER := $(OUT)/tetrasticks/tetra_printer
+
 DLX := src/dlx
 
 $(DLX): src/dlx.c
@@ -23,6 +33,12 @@ $(TETRASTICK_PRINTER): $(TETRASTICK_SOLVERS)/solution_printer.c
 
 tetrastick: $(TETRASTICK_BUILDER) $(TETRASTICK_PRINTER) $(DLX)
 	$(TETRASTICK_BUILDER) | $(DLX) | $(TETRASTICK_PRINTER) $(OUT)/tetrasticks
-	# $(TETRASTICK_BUILDER) | $(DLX) | $(TETRASTICK_PRINTER)
 
-.PHONY: tetrastick 
+pentomino: $(PENTOMINO_BUILDER) $(PENTOMINO_PRINTER) $(DLX)
+	mkdir -p out/pentomino
+	cd out/pentomino && ../../$(PENTOMINO_BUILDER) | ../../$(DLX) | ../../$(PENTOMINO_PRINTER)
+
+n_queen: $(N_QUEENS_BUILDER) $(N_QUEENS_PRINTER) $(DLX)
+	$(N_QUEENS_BUILDER) | $(DLX) | $(N_QUEENS_PRINTER)
+
+.PHONY: tetrastick pentomino
