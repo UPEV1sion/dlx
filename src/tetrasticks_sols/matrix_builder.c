@@ -4,8 +4,8 @@
 #include <stdbool.h>
 
 #define ARRAY_LEN(a)(sizeof(a)/sizeof(a[0]))
-#define WIDTH 5
-#define HEIGHT 5
+#define WIDTH 6
+#define HEIGHT 6
 
 typedef struct
 {
@@ -15,7 +15,7 @@ typedef struct
 typedef enum
 {
     I,
-    L,
+    // L,
     Y,
     N,
     F,
@@ -34,21 +34,18 @@ typedef enum
 typedef struct
 {
     PieceKind kind;
-    Coord verticals[WIDTH * HEIGHT];
-    size_t vertical_count;
-    Coord horizontals[WIDTH * HEIGHT];
-    size_t horizontal_count;
-    Coord interior[WIDTH * HEIGHT];
-    size_t interior_count;
+    Coord v[WIDTH * HEIGHT]; size_t vc;
+    Coord h[WIDTH * HEIGHT]; size_t hc;
+    Coord i[WIDTH * HEIGHT]; size_t ic;
 } Piece;
 
 static char *pieces[] = {
     "V00 V01 V02 V03 I01 I02 I03", // I
     // "V00 V01 V02 H00 I01 I02",     // L
-    "V00 V01 V02 H01 I02", // Y
-    "V00 V01 V12 H02 I01", // N
-    "V00 V01 H01 H02",     // F
-    // "V00 V01 V10 H01",             // H
+    "V00 V01 V02 H01 I02",     // Y
+    "V00 V01 V12 H02 I01",     // N
+    "V00 V01 H01 H02",         // F
+    "V00 V01 V10 H01",         // H
     "V00 V10 V11 H00 I11",     // J
     "V10 V11 H01 H11",         // X
     "V00 V11 H01 H02",         // P
@@ -93,19 +90,19 @@ void dump_piece(const Piece p)
 {
     printf("%d ", p.kind);
 
-    for (size_t h = 0; h < p.horizontal_count; ++h)
+    for (size_t h = 0; h < p.hc; ++h)
     {
-        printf("%d ", H_index(p.horizontals[h]));
+        printf("%d ", H_index(p.h[h]));
     }
 
-    for (size_t v = 0; v < p.vertical_count; ++v)
+    for (size_t v = 0; v < p.vc; ++v)
     {
-        printf("%d ", V_index(p.verticals[v]));
+        printf("%d ", V_index(p.v[v]));
     }
 
-    for (size_t i = 0; i < p.interior_count; ++i)
+    for (size_t i = 0; i < p.ic; ++i)
     {
-        printf("%d ", I_index(p.interior[i]));
+        printf("%d ", I_index(p.i[i]));
     }
 
     printf("\n");
@@ -127,11 +124,11 @@ void parse_piece(Piece *p, const char *repr)
 
         switch (type)
         {
-            case 'H': p->horizontals[p->horizontal_count++] = (Coord){x, y};
+            case 'H': p->h[p->hc++] = (Coord){x, y};
                 break;
-            case 'V': p->verticals[p->vertical_count++] = (Coord){x, y};
+            case 'V': p->v[p->vc++] = (Coord){x, y};
                 break;
-            case 'I': p->interior[p->interior_count++] = (Coord){x, y};
+            case 'I': p->i[p->ic++] = (Coord){x, y};
                 break;
             default: break;
         }
@@ -144,22 +141,22 @@ Piece piece_rotate90(const Piece p)
 {
     Piece ret = {.kind = p.kind};
 
-    for (size_t v = 0; v < p.vertical_count; ++v)
+    for (size_t v = 0; v < p.vc; ++v)
     {
-        const Coord rot                         = p.verticals[v];
-        ret.horizontals[ret.horizontal_count++] = (Coord){rot.y, -rot.x};
+        const Coord rot                         = p.v[v];
+        ret.h[ret.hc++] = (Coord){rot.y, -rot.x};
     }
 
-    for (size_t h = 0; h < p.horizontal_count; ++h)
+    for (size_t h = 0; h < p.hc; ++h)
     {
-        const Coord rot                     = p.horizontals[h];
-        ret.verticals[ret.vertical_count++] = (Coord){rot.y, -rot.x - 1};
+        const Coord rot                     = p.h[h];
+        ret.v[ret.vc++] = (Coord){rot.y, -rot.x - 1};
     }
 
-    for (size_t i = 0; i < p.interior_count; ++i)
+    for (size_t i = 0; i < p.ic; ++i)
     {
-        const Coord rot                    = p.interior[i];
-        ret.interior[ret.interior_count++] = (Coord){rot.y, -rot.x};
+        const Coord rot                    = p.i[i];
+        ret.i[ret.ic++] = (Coord){rot.y, -rot.x};
     }
 
     return ret;
@@ -169,22 +166,22 @@ Piece piece_reflect(const Piece p)
 {
     Piece ret = {.kind = p.kind};
 
-    for (size_t h = 0; h < p.horizontal_count; ++h)
+    for (size_t h = 0; h < p.hc; ++h)
     {
-        const Coord rot                         = p.horizontals[h];
-        ret.horizontals[ret.horizontal_count++] = (Coord){-rot.x - 1, rot.y};
+        const Coord rot                         = p.h[h];
+        ret.h[ret.hc++] = (Coord){-rot.x - 1, rot.y};
     }
 
-    for (size_t v = 0; v < p.vertical_count; ++v)
+    for (size_t v = 0; v < p.vc; ++v)
     {
-        const Coord rot                     = p.verticals[v];
-        ret.verticals[ret.vertical_count++] = (Coord){-rot.x, rot.y};
+        const Coord rot                     = p.v[v];
+        ret.v[ret.vc++] = (Coord){-rot.x, rot.y};
     }
 
-    for (size_t i = 0; i < p.interior_count; ++i)
+    for (size_t i = 0; i < p.ic; ++i)
     {
-        const Coord rot                    = p.interior[i];
-        ret.interior[ret.interior_count++] = (Coord){-rot.x, rot.y};
+        const Coord rot                    = p.i[i];
+        ret.i[ret.ic++] = (Coord){-rot.x, rot.y};
     }
 
     return ret;
@@ -192,21 +189,21 @@ Piece piece_reflect(const Piece p)
 
 bool piece_fits(const Piece p)
 {
-    for (size_t i = 0; i < p.horizontal_count; ++i)
+    for (size_t i = 0; i < p.hc; ++i)
     {
-        const Coord c = p.horizontals[i];
+        const Coord c = p.h[i];
         if (c.x < 0 || c.x >= WIDTH - 1 || c.y < 0 || c.y >= HEIGHT) return false;
     }
 
-    for (size_t i = 0; i < p.vertical_count; ++i)
+    for (size_t i = 0; i < p.vc; ++i)
     {
-        const Coord c = p.verticals[i];
+        const Coord c = p.v[i];
         if (c.x < 0 || c.x >= WIDTH || c.y < 0 || c.y >= HEIGHT - 1) return false;
     }
 
-    for (size_t i = 0; i < p.interior_count; ++i)
+    for (size_t i = 0; i < p.ic; ++i)
     {
-        const Coord c = p.interior[i];
+        const Coord c = p.i[i];
         if (c.x <= 0 || c.x >= WIDTH - 1 || c.y <= 0 || c.y >= HEIGHT - 1) return false;
     }
 
@@ -217,22 +214,22 @@ Piece piece_offset(const Piece *p, const int y, const int x)
 {
     Piece ret = {.kind = p->kind};
 
-    for (size_t h = 0; h < p->horizontal_count; ++h)
+    for (size_t h = 0; h < p->hc; ++h)
     {
-        const Coord c                           = p->horizontals[h];
-        ret.horizontals[ret.horizontal_count++] = (Coord){c.x + x, c.y + y};
+        const Coord c                           = p->h[h];
+        ret.h[ret.hc++] = (Coord){c.x + x, c.y + y};
     }
 
-    for (size_t v = 0; v < p->vertical_count; ++v)
+    for (size_t v = 0; v < p->vc; ++v)
     {
-        const Coord c                       = p->verticals[v];
-        ret.verticals[ret.vertical_count++] = (Coord){c.x + x, c.y + y};
+        const Coord c                       = p->v[v];
+        ret.v[ret.vc++] = (Coord){c.x + x, c.y + y};
     }
 
-    for (size_t i = 0; i < p->interior_count; ++i)
+    for (size_t i = 0; i < p->ic; ++i)
     {
-        const Coord c                      = p->interior[i];
-        ret.interior[ret.interior_count++] = (Coord){c.x + x, c.y + y};
+        const Coord c                      = p->i[i];
+        ret.i[ret.ic++] = (Coord){c.x + x, c.y + y};
     }
 
     return ret;
@@ -242,14 +239,14 @@ Piece filter_interiors(const Piece *p)
 {
     Piece ret;
     memcpy(&ret, p, sizeof(Piece));
-    ret.interior_count = 0;
+    ret.ic = 0;
 
-    for (size_t i = 0; i < p->interior_count; ++i)
+    for (size_t i = 0; i < p->ic; ++i)
     {
-        const Coord c = p->interior[i];
+        const Coord c = p->i[i];
         if (c.x != 0 && c.x != WIDTH - 1 && c.y != 0 && c.y != HEIGHT - 1)
         {
-            ret.interior[ret.interior_count++] = c;
+            ret.i[ret.ic++] = c;
         }
     }
 
@@ -260,40 +257,40 @@ void normalize_piece(Piece *p)
 {
     int min_x = INT_MAX, min_y = INT_MAX;
 
-    for (size_t i = 0; i < p->horizontal_count; ++i)
+    for (size_t i = 0; i < p->hc; ++i)
     {
-        if (p->horizontals[i].x < min_x) min_x = p->horizontals[i].x;
-        if (p->horizontals[i].y < min_y) min_y = p->horizontals[i].y;
+        if (p->h[i].x < min_x) min_x = p->h[i].x;
+        if (p->h[i].y < min_y) min_y = p->h[i].y;
     }
 
-    for (size_t i = 0; i < p->vertical_count; ++i)
+    for (size_t i = 0; i < p->vc; ++i)
     {
-        if (p->verticals[i].x < min_x) min_x = p->verticals[i].x;
-        if (p->verticals[i].y < min_y) min_y = p->verticals[i].y;
+        if (p->v[i].x < min_x) min_x = p->v[i].x;
+        if (p->v[i].y < min_y) min_y = p->v[i].y;
     }
 
-    for (size_t i = 0; i < p->interior_count; ++i)
+    for (size_t i = 0; i < p->ic; ++i)
     {
-        if (p->interior[i].x < min_x) min_x = p->interior[i].x;
-        if (p->interior[i].y < min_y) min_y = p->interior[i].y;
+        if (p->i[i].x < min_x) min_x = p->i[i].x;
+        if (p->i[i].y < min_y) min_y = p->i[i].y;
     }
 
-    for (size_t i = 0; i < p->horizontal_count; ++i)
+    for (size_t i = 0; i < p->hc; ++i)
     {
-        p->horizontals[i].x -= min_x;
-        p->horizontals[i].y -= min_y;
+        p->h[i].x -= min_x;
+        p->h[i].y -= min_y;
     }
 
-    for (size_t i = 0; i < p->vertical_count; ++i)
+    for (size_t i = 0; i < p->vc; ++i)
     {
-        p->verticals[i].x -= min_x;
-        p->verticals[i].y -= min_y;
+        p->v[i].x -= min_x;
+        p->v[i].y -= min_y;
     }
 
-    for (size_t i = 0; i < p->interior_count; ++i)
+    for (size_t i = 0; i < p->ic; ++i)
     {
-        p->interior[i].x -= min_x;
-        p->interior[i].y -= min_y;
+        p->i[i].x -= min_x;
+        p->i[i].y -= min_y;
     }
 }
 
@@ -326,10 +323,10 @@ void dump_piece_to_ppm(const Piece p, const char *filename)
                 r = g = b = 0;
             }
 
-            for (size_t i = 0; i < p.horizontal_count; i++)
+            for (size_t i = 0; i < p.hc; i++)
             {
-                const int start_x = MARGIN + p.horizontals[i].x * SCALE;
-                const int start_y = MARGIN + p.horizontals[i].y * SCALE;
+                const int start_x = MARGIN + p.h[i].x * SCALE;
+                const int start_y = MARGIN + p.h[i].y * SCALE;
                 const int end_x   = start_x + SCALE;
 
                 if (x >= start_x && x <= end_x && abs(y - start_y) <= THICKNESS)
@@ -340,10 +337,10 @@ void dump_piece_to_ppm(const Piece p, const char *filename)
                 }
             }
 
-            for (size_t i = 0; i < p.vertical_count; i++)
+            for (size_t i = 0; i < p.vc; i++)
             {
-                const int start_x = MARGIN + p.verticals[i].x * SCALE;
-                const int start_y = MARGIN + p.verticals[i].y * SCALE;
+                const int start_x = MARGIN + p.v[i].x * SCALE;
+                const int start_y = MARGIN + p.v[i].y * SCALE;
                 const int end_y   = start_y + SCALE;
 
                 if (y >= start_y && y <= end_y && abs(x - start_x) <= THICKNESS)
@@ -354,10 +351,10 @@ void dump_piece_to_ppm(const Piece p, const char *filename)
                 }
             }
 
-            for (size_t i = 0; i < p.interior_count; i++)
+            for (size_t i = 0; i < p.ic; i++)
             {
-                const int ix = MARGIN + p.interior[i].x * SCALE;
-                const int iy = MARGIN + p.interior[i].y * SCALE;
+                const int ix = MARGIN + p.i[i].x * SCALE;
+                const int iy = MARGIN + p.i[i].y * SCALE;
                 if (abs(x - ix) <= 4 && abs(y - iy) <= 4)
                 {
                     r = 0;
@@ -406,10 +403,10 @@ void build_matrix(void)
 
                         if (piece_fits(filtered))
                         {
-                            // dump_piece(filtered);
-                            char name[32];
-                            sprintf(name, "piece_%d_orient_%d.ppm", p, debug_count++);
-                            dump_piece_to_ppm(filtered, name);
+                            dump_piece(filtered);
+                            // char name[32];
+                            // sprintf(name, "piece_%d_orient_%d.ppm", p, debug_count++);
+                            // dump_piece_to_ppm(filtered, name);
                         }
                     }
                 }
