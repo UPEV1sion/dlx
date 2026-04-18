@@ -8,7 +8,7 @@
 #define WIDTH 6
 #define HEIGHT 6
 
-#define NUM_PIECES 14
+#define NUM_PIECES 15
 #define NUM_H (WIDTH * (HEIGHT - 1))
 #define NUM_V ((WIDTH - 1) * HEIGHT)
 #define NUM_I ((WIDTH - 2) * (HEIGHT - 2))

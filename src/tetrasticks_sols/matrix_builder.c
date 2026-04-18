@@ -24,6 +24,7 @@ typedef enum
     X,
     P,
     U,
+    T,
     R,
     Z,
     O,
@@ -42,19 +43,20 @@ typedef struct
 static char *pieces[] = {
     "V00 V01 V02 V03 I01 I02 I03", // I
     // "V00 V01 V02 H00 I01 I02",     // L
-    "V00 V01 V02 H01 I02",     // Y
-    "V00 V01 V12 H02 I01",     // N
-    "V00 V01 H01 H02",         // F
-    "V00 V01 V10 H01",         // H
-    "V00 V10 V11 H00 I11",     // J
-    "V10 V11 H01 H11",         // X
-    "V00 V11 H01 H02",         // P
-    "V00 V20 H00 H10 I10",     // U
-    "V10 V11 H01 H12",         // R
-    "V10 V11 H00 H12 I11",     // Z
-    "V00 V10 H00 H01",         // O
-    "V10 V21 H00 H11",         // W
-    "V00 V01 H00 H10 I01 I10", // V
+    "V00 V01 V02 H01 I02",         // Y
+    "V00 V01 V12 H02 I01",         // N
+    "V00 V01 H01 H02",             // F
+    "V00 V01 V10 H01",             // H
+    "V00 V10 V11 H00 I11",         // J
+    "V10 V11 H01 H11",             // X
+    "V00 V11 H01 H02",             // P
+    "V00 V20 H00 H10 I10",         // U
+    "V10 V11 H02 H12 I11",         // T
+    "V10 V11 H01 H12",             // R
+    "V10 V11 H00 H12 I11",         // Z
+    "V00 V10 H00 H01",             // O
+    "V10 V21 H00 H11",             // W
+    "V00 V01 H00 H10 I01 I10",     // V
 };
 
 #define NUM_PIECES (ARRAY_LEN(pieces))
@@ -380,7 +382,7 @@ void build_matrix(void)
         Piece base = {0};
         parse_piece(&base, pieces[p]);
 
-        int debug_count = 0;
+        // int debug_count = 0;
         for (int r = 0; r < 4; ++r)
         {
             Piece rot = base;
