@@ -3,6 +3,9 @@
 #include <string.h>
 #include <stdbool.h>
 
+#define HASHSET_IMPLEMENTATION
+#include "hashset.h"
+
 #define shift_args(argc, argv) ((argc)--, *(argv)++)
 
 #define WIDTH 6
@@ -139,8 +142,38 @@ void draw_solution(Piece *pieces, int count, const char *filename)
     fclose(f);
 }
 
+int cmp_piece(const void *a, const void *b)
+{
+    const Piece *A = a;
+    const Piece *B = b;
+
+    if (A->kind != B->kind)
+        return A->kind - B->kind;
+
+    if (A->hc != B->hc) return A->hc - B->hc;
+    int r = memcmp(A->h, B->h, A->hc * sizeof(Coord));
+    if (r) return r;
+
+    if (A->vc != B->vc) return A->vc - B->vc;
+    r = memcmp(A->v, B->v, A->vc * sizeof(Coord));
+    if (r) return r;
+
+    if (A->ic != B->ic) return A->ic - B->ic;
+    return memcmp(A->i, B->i, A->ic * sizeof(Coord));
+}
+
+int cmp_coord(const void *a, const void *b)
+{
+    const Coord *A = a;
+    const Coord *B = b;
+    if (A->y != B->y) return A->y - B->y;
+    return A->x - B->x;
+}
+
 int main(int argc, char **argv)
 {
+    hashset_t hs = {0};
+
     char line[1024];
 
     Piece solution[64];
@@ -163,9 +196,26 @@ int main(int argc, char **argv)
     {
         if(strlen(line) <= 1)
         {
-            char name[1024];
-            snprintf(name, sizeof(name), "%ssolution_%d.ppm", prefix, sol_id++);
-            draw_solution(solution, sol_count, name);
+        
+            for (int i = 0; i < sol_count; i++) 
+            {
+                qsort(solution[i].h, solution[i].hc, sizeof(Coord), cmp_coord);
+                qsort(solution[i].v, solution[i].vc, sizeof(Coord), cmp_coord);
+                qsort(solution[i].i, solution[i].ic, sizeof(Coord), cmp_coord);
+            }
+
+            qsort(solution, sol_count, sizeof(Piece), cmp_piece);
+
+            const size_t size = sol_count * sizeof(Piece);
+            if(!hashset_contains(&hs, solution, size))
+            {
+                char name[1024];
+                snprintf(name, sizeof(name), "%ssolution_%d.ppm", prefix, sol_id++);
+                draw_solution(solution, sol_count, name);
+
+                hashset_insert(&hs, solution, size);
+            }
+
             sol_count = 0;
             continue;
         }
@@ -199,6 +249,8 @@ int main(int argc, char **argv)
 
         solution[sol_count++] = p;
     }
+
+    hashset_free(&hs);
 
     return 0;
 }
