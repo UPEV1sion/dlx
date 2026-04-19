@@ -3,6 +3,10 @@
 #include <limits.h>
 #include <stdbool.h>
 
+#define HASHSET_INIT_CAP 256
+#define HASHSET_IMPLEMENTATION
+#include "hashset.h"
+
 #define ARRAY_LEN(a)(sizeof(a)/sizeof(a[0]))
 #define WIDTH 6
 #define HEIGHT 6
@@ -294,83 +298,10 @@ void normalize_piece(Piece *p)
         p->i[i].x -= min_x;
         p->i[i].y -= min_y;
     }
-}
 
-#define SCALE 40
-#define MARGIN 20
-#define THICKNESS 3
-
-#define abs(a) ((a) < 0 ? -(a) : (a))
-
-void dump_piece_to_ppm(const Piece p, const char *filename)
-{
-    const int img_w = (WIDTH - 1) * SCALE + 2 * MARGIN;
-    const int img_h = (HEIGHT - 1) * SCALE + 2 * MARGIN;
-
-    FILE *f = fopen(filename, "w");
-    if (!f) return;
-
-    fprintf(f, "P3\n%d %d\n255\n", img_w, img_h);
-
-    for (int y = 0; y < img_h; y++)
-    {
-        for (int x = 0; x < img_w; x++)
-        {
-            int r = 240, g = 240, b = 240;
-
-            const int grid_x = (x - MARGIN);
-            const int grid_y = (y - MARGIN);
-            if (grid_x >= 0 && grid_y >= 0 && grid_x % SCALE == 0 && grid_y % SCALE == 0)
-            {
-                r = g = b = 0;
-            }
-
-            for (size_t i = 0; i < p.hc; i++)
-            {
-                const int start_x = MARGIN + p.h[i].x * SCALE;
-                const int start_y = MARGIN + p.h[i].y * SCALE;
-                const int end_x   = start_x + SCALE;
-
-                if (x >= start_x && x <= end_x && abs(y - start_y) <= THICKNESS)
-                {
-                    r = 255;
-                    g = 0;
-                    b = 0;
-                }
-            }
-
-            for (size_t i = 0; i < p.vc; i++)
-            {
-                const int start_x = MARGIN + p.v[i].x * SCALE;
-                const int start_y = MARGIN + p.v[i].y * SCALE;
-                const int end_y   = start_y + SCALE;
-
-                if (y >= start_y && y <= end_y && abs(x - start_x) <= THICKNESS)
-                {
-                    r = 0;
-                    g = 0;
-                    b = 255;
-                }
-            }
-
-            for (size_t i = 0; i < p.ic; i++)
-            {
-                const int ix = MARGIN + p.i[i].x * SCALE;
-                const int iy = MARGIN + p.i[i].y * SCALE;
-                if (abs(x - ix) <= 4 && abs(y - iy) <= 4)
-                {
-                    r = 0;
-                    g = 255;
-                    b = 0;
-                }
-            }
-
-            fprintf(f, "%d %d %d ", r, g, b);
-        }
-        fprintf(f, "\n");
-    }
-    fclose(f);
-    printf("Debug image saved to %s\n", filename);
+    qsort(solution[i].h, solution[i].hc, sizeof(Coord), cmp_coord);
+    qsort(solution[i].v, solution[i].vc, sizeof(Coord), cmp_coord);
+    qsort(solution[i].i, solution[i].ic, sizeof(Coord), cmp_coord);
 }
 
 void build_matrix(void)
@@ -382,7 +313,8 @@ void build_matrix(void)
         Piece base = {0};
         parse_piece(&base, pieces[p]);
 
-        // int debug_count = 0;
+        hashset_t hs = {0};
+
         for (int r = 0; r < 4; ++r)
         {
             Piece rot = base;
@@ -405,10 +337,11 @@ void build_matrix(void)
 
                         if (piece_fits(filtered))
                         {
-                            dump_piece(filtered);
-                            // char name[32];
-                            // sprintf(name, "piece_%d_orient_%d.ppm", p, debug_count++);
-                            // dump_piece_to_ppm(filtered, name);
+                            if(!hashset_contains(&hs, filtered, sizeof(Piece)))
+                            {
+                                dump_piece(filtered);
+                                hashset_insert(&hs, filtered, sizeof(Piece));
+                            } 
                         }
                     }
                 }
@@ -416,6 +349,8 @@ void build_matrix(void)
 
             base = piece_rotate90(base);
         }
+
+        hashset_free(&hs);
     }
 }
 
