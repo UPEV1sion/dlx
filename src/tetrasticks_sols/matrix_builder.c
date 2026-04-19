@@ -259,6 +259,14 @@ Piece filter_interiors(const Piece *p)
     return ret;
 }
 
+int cmp_coord(const void *a, const void *b)
+{
+    const Coord *A = a;
+    const Coord *B = b;
+    if (A->y != B->y) return A->y - B->y;
+    return A->x - B->x;
+}
+
 void normalize_piece(Piece *p)
 {
     int min_x = INT_MAX, min_y = INT_MAX;
@@ -299,9 +307,9 @@ void normalize_piece(Piece *p)
         p->i[i].y -= min_y;
     }
 
-    qsort(solution[i].h, solution[i].hc, sizeof(Coord), cmp_coord);
-    qsort(solution[i].v, solution[i].vc, sizeof(Coord), cmp_coord);
-    qsort(solution[i].i, solution[i].ic, sizeof(Coord), cmp_coord);
+    qsort(p->h, p->hc, sizeof(Coord), cmp_coord);
+    qsort(p->v, p->vc, sizeof(Coord), cmp_coord);
+    qsort(p->i, p->ic, sizeof(Coord), cmp_coord);
 }
 
 void build_matrix(void)
@@ -332,15 +340,15 @@ void build_matrix(void)
                 {
                     for (int x = 0; x < WIDTH; ++x)
                     {
-                        Piece placed         = piece_offset(&orient, y, x);
-                        const Piece filtered = filter_interiors(&placed);
+                        Piece placed = piece_offset(&orient, y, x);
+                        Piece filtered = filter_interiors(&placed);
 
                         if (piece_fits(filtered))
                         {
-                            if(!hashset_contains(&hs, filtered, sizeof(Piece)))
+                            if(!hashset_contains(&hs, &filtered, sizeof(Piece)))
                             {
                                 dump_piece(filtered);
-                                hashset_insert(&hs, filtered, sizeof(Piece));
+                                hashset_insert(&hs, &filtered, sizeof(Piece));
                             } 
                         }
                     }
