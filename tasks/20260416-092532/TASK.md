@@ -1,4 +1,4 @@
-# Hexamoid solver
+# Hexiamond solver
 
 - STATUS: OPEN
 - PRIORITY: 33
