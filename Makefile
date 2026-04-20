@@ -17,7 +17,7 @@ N_QUEENS_PRINTER := $(N_QUEEN_SOLVERS)/solution_printer.py
 TETRASTICK_BUILDER := $(OUT)/tetrasticks/tetra_builder
 TETRASTICK_PRINTER := $(OUT)/tetrasticks/tetra_printer
 
-DLX := src/dlx
+DLX := out/dlx
 
 $(DLX): src/dlx.c
 	mkdir -p $(dir $@)

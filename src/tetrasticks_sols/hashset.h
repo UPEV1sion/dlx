@@ -237,7 +237,7 @@ HSDEF void hashset_free(hashset_t *hs)
         hashset_bucket_t *cur_bucket = hs->buckets[i];
         if(!cur_bucket) continue;
         hashset__bucket_free(cur_bucket);
-   }
+    }
     free(hs->buckets);
 }
 
