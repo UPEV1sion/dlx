@@ -107,8 +107,7 @@ HSDEF void hashset__bucket_free(hashset_bucket_t *bucket)
 
 HSDEF size_t hashset__find_free_bucket(hashset_bucket_t **buckets, size_t cap, size_t hash)
 {
-    size_t start = hash;
-    for(size_t offset = 0; buckets[hash]; ++offset) hash = (start + offset * offset) % cap;
+    while(buckets[hash] != NULL) hash = (hash + 1) % cap;
     return hash;
 }
 
@@ -149,11 +148,11 @@ HSDEF int hashset_insert(hashset_t *hs, void *item, size_t item_size)
     size_t hash = raw_hash % hs->cap;
 
     size_t start = hash;
-    for(size_t offset = 0; hs->buckets[hash]; ++offset)
+    while(hs->buckets[hash] != NULL)
     {
         hashset_bucket_t *b = hs->buckets[hash];
         if(hashset_equal(b->item, b->item_size, item, item_size)) return 0;
-        hash = (start + offset * offset) % hs->cap;
+        hash = (hash + 1) % hs->cap;
         if(hash == start) return -1;
     }
 
@@ -162,6 +161,7 @@ HSDEF int hashset_insert(hashset_t *hs, void *item, size_t item_size)
 
     hs->buckets[hash] = bucket;
     hs->used++;
+    return 0;
 
     return 0;
 }
@@ -169,18 +169,17 @@ HSDEF int hashset_insert(hashset_t *hs, void *item, size_t item_size)
 HSDEF int hashset_remove(hashset_t *hs, void *item, size_t item_size)
 {
     HS_ASSERT(hs, "Hashset can not be NULL!\n");
-    if(hs->cap == 0) return -1;
+    HS_ASSERT(hs->cap > 0, "Hashset can not be empty!\n");    
 
     size_t hash = hashset_hash(item, item_size) % hs->cap;
     size_t start = hash;
 
-    size_t offset;
-    for(offset = 0; hs->buckets[hash]; ++offset)
+    while(hs->buckets[hash] != NULL)
     {
         hashset_bucket_t *b = hs->buckets[hash];
         if(hashset_equal(b->item, b->item_size, item, item_size)) break;
         
-        hash = (start + offset * offset) % hs->cap;
+        hash = (hash + 1) % hs->cap;
         if(hash == start) return -1;
     }
      
@@ -189,17 +188,16 @@ HSDEF int hashset_remove(hashset_t *hs, void *item, size_t item_size)
     hs->buckets[hash] = NULL;
     hs->used--;
 
-    // FIXME this is wrong and broken. tombstones are required
-    size_t next = (start + offset * offset) % hs->cap;
-    for(; hs->buckets[next]; ++offset)
+    size_t next = (hash + 1) % hs->cap;
+    while(hs->buckets[next] != NULL)
     {
         hashset_bucket_t *b = hs->buckets[next];
         hs->buckets[next] = NULL;
         size_t new_pos = b->hash % hs->cap;
-        for(size_t off_new = 0; hs->buckets[new_pos]; ++off_new) new_pos = (new_pos + off_new * off_new) % hs->cap;
+        while(hs->buckets[new_pos] != NULL) new_pos = (new_pos + 1) % hs->cap;
         hs->buckets[new_pos] = b;
 
-        next = (start + offset * offset) % hs->cap;
+        next = (next + 1) % hs->cap;
     }
 
     return 0;
@@ -219,13 +217,12 @@ HSDEF bool hashset_contains(hashset_t *hs, void *item, size_t item_size)
 
     if(hs->cap == 0) return false;
 
-    size_t start = hashset_hash(item, item_size) % hs->cap;
-    size_t hash = start;
-    for(size_t offset = 0; hs->buckets[hash]; ++offset)
+    size_t hash = hashset_hash(item, item_size) % hs->cap;
+    while(hs->buckets[hash] != NULL)
     {
         hashset_bucket_t *b = hs->buckets[hash];
         if(hashset_equal(b->item, b->item_size, item, item_size)) return true;
-        hash = (start + offset * offset) % hs->cap;
+        hash = (hash + 1) % hs->cap;
     }
 
     return false;
@@ -240,7 +237,7 @@ HSDEF void hashset_free(hashset_t *hs)
         hashset_bucket_t *cur_bucket = hs->buckets[i];
         if(!cur_bucket) continue;
         hashset__bucket_free(cur_bucket);
-    }
+   }
     free(hs->buckets);
 }
 
@@ -249,5 +246,6 @@ HSDEF void hashset_free(hashset_t *hs)
 
 /*
     Revision history:
+        1.0.1 (2026-01-17): contains method works with empty hashset
         1.0.0 (2026-01-17): first release
 */

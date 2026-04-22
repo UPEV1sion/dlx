@@ -75,7 +75,8 @@ static char *pieces[] = {
 
 #define NMAND (NUM_PIECES + NUM_H + NUM_V)
 #define NCOLS (NMAND + NUM_I)
-#define NROWS 1085
+// TODO get rid of this error prone constant
+#define NROWS 1652
 
 int H_index(const Coord c)
 {
@@ -316,6 +317,7 @@ void build_matrix(void)
 {
     printf("%d %d %d\n", (int) NROWS, (int) NCOLS, (int) NMAND);
 
+    size_t row_count = 0;
     for (size_t p = 0; p < NUM_PIECES; ++p)
     {
         Piece base = {0};
@@ -349,6 +351,7 @@ void build_matrix(void)
                             {
                                 dump_piece(filtered);
                                 hashset_insert(&hs, &filtered, sizeof(Piece));
+                                row_count++;
                             } 
                         }
                     }
@@ -359,6 +362,12 @@ void build_matrix(void)
         }
 
         hashset_free(&hs);
+    }
+
+    if(row_count != NROWS)
+    {
+        fprintf(stderr, "WARNING: discrepancy between row_count = %zu and NROWS = %u\n", row_count, NROWS);
+        fprintf(stderr, "WARNING: please adjust NROWS!\n");
     }
 }
 
