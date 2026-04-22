@@ -8,7 +8,7 @@ This implementation is suited for solving exact cover problems like [Polyomino](
 $ make pentomino
 ```
 
-There are several convenience Makefile targets like "pentomino", "n\_queen" and "tetrastick", which automatically build and run the whole pipeline of matrix generation, puzzle solving (dlx) and solution printing/visualization.
+There are several convenience Makefile targets like "pentomino", "n\_queen",  "tetrastick" and "sudoku", which automatically build and run the whole pipeline of matrix generation, puzzle solving (dlx) and solution printing/visualization.
 The solutions will be put in `out` or to `stdout`, whatever is more appropiate.
 In the case of tetrasticks and pentominos `.ppm` images will be created.
 
