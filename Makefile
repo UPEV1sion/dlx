@@ -8,6 +8,7 @@ PENTOMINO_SOLVERS := $(SRC)/pentomino_sols
 TETRASTICK_SOLVERS := $(SRC)/tetrasticks_sols
 N_QUEEN_SOLVERS := $(SRC)/n_queens_sols
 SUDOKU_SOLVER := $(SRC)/sudoku_sols
+HEXIAMOND_SOLVER := $(SRC)/hexiamond_sols
 
 PENTOMINO_BUILDER := $(PENTOMINO_SOLVERS)/matrix_builder.py
 PENTOMINO_PRINTER := $(PENTOMINO_SOLVERS)/solution_printer.py
@@ -20,6 +21,8 @@ TETRASTICK_PRINTER := $(OUT)/tetrasticks/tetra_printer
 
 SUDOKU_BUILDER := $(OUT)/sudoku/sudoku_builder
 SUDOKU_PRINTER := $(OUT)/sudoku/sudoku_printer
+
+HEXIAMOND_BUILDER := $(OUT)/hexiamond/matrix_builder
 
 DLX := out/dlx
 
@@ -40,6 +43,10 @@ $(SUDOKU_BUILDER): $(SUDOKU_SOLVER)/matrix_builder.c
 	$(CC) $(CFLAGS) $^ -o $@
 
 $(SUDOKU_PRINTER): $(SUDOKU_SOLVER)/solution_printer.c
+	mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) $^ -o $@
+
+$(HEXIAMOND_BUILDER): $(HEXIAMOND_SOLVER)/matrix_builder.c
 	mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) $^ -o $@
 

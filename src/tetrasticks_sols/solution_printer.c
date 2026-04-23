@@ -4,7 +4,7 @@
 #include <stdbool.h>
 
 #define HASHSET_IMPLEMENTATION
-#include "hashset.h"
+#include "../hashset.h"
 
 #define shift_args(argc, argv) ((argc)--, *(argv)++)
 

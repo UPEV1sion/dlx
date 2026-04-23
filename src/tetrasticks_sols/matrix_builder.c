@@ -5,7 +5,7 @@
 
 #define HASHSET_INIT_CAP 256
 #define HASHSET_IMPLEMENTATION
-#include "hashset.h"
+#include "../hashset.h"
 
 #define ARRAY_LEN(a)(sizeof(a)/sizeof(a[0]))
 #define WIDTH 6
