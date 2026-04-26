@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <stdlib.h>
 #include <assert.h>
 
 #define ARENA_IMPLEMENTATION
@@ -140,7 +139,7 @@ DLX parse_dlx_from_file(Arena *arena, size_t *nrows, size_t *ncols, size_t *nman
             }
 
             char *end;
-            size_t idx = strtoull(token, &end, 10);
+            const size_t idx = strtoull(token, &end, 10);
             if(*end != 0)
             {
                 fprintf(stderr, "ERROR: invalid index in matrix %s\n", token);
@@ -174,7 +173,7 @@ DLX parse_dlx_from_file(Arena *arena, size_t *nrows, size_t *ncols, size_t *nman
     return dlx;
 }
 
-Node* choose_column(Node *root)
+Node* choose_column(const Node *root)
 {
     Node *best = root->r;
 

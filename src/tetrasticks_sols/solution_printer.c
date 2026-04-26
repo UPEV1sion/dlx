@@ -3,13 +3,68 @@
 #include <string.h>
 #include <stdbool.h>
 
+#define WIDTH 6
+#define HEIGHT 6
+
+typedef struct {
+    int x, y;
+} Coord;
+
+typedef struct {
+    int kind;
+
+    Coord h[WIDTH * HEIGHT]; size_t hc;
+    Coord v[WIDTH * HEIGHT]; size_t vc;
+    Coord i[WIDTH * HEIGHT]; size_t ic;
+} Piece;
+
+int cmp_piece(const void *a, const void *b);
+
+bool hs_piece_cmp(const void *a, const size_t as, const void *b, const size_t bs)
+{
+    (void) as;
+    (void) bs;
+    return cmp_piece(a, b) == 0;
+}
+
+size_t hs_piece_hash(const void *a, const size_t as)
+{
+    (void) as;
+
+    const Piece *piece = a;
+
+    static const size_t magic_prime = 0x00000100000001b3;
+    size_t hash = 0xcbf29ce484222325;
+    
+    hash = (hash ^ piece->kind) * magic_prime;
+
+    for(size_t i = 0; i < piece->hc; ++i)
+    {
+        hash = (hash ^ piece->h[i].x) * magic_prime;
+        hash = (hash ^ piece->h[i].y) * magic_prime;
+    }
+
+    for(size_t i = 0; i < piece->vc; ++i)
+    {
+        hash = (hash ^ piece->v[i].x) * magic_prime;
+        hash = (hash ^ piece->v[i].y) * magic_prime;
+    }
+
+    for(size_t i = 0; i < piece->ic; ++i)
+    {
+        hash = (hash ^ piece->i[i].x) * magic_prime;
+        hash = (hash ^ piece->i[i].y) * magic_prime;
+    }
+
+    return hash;
+}
+
+#define HASHSET_EQUAL hs_piece_cmp
+#define HASHSET_HASH hs_piece_hash
 #define HASHSET_IMPLEMENTATION
 #include "hashset.h"
 
 #define shift_args(argc, argv) ((argc)--, *(argv)++)
-
-#define WIDTH 6
-#define HEIGHT 6
 
 #define NUM_PIECES 15
 #define NUM_H (WIDTH * (HEIGHT - 1))
@@ -24,18 +79,6 @@
 #define SCALE 40
 #define MARGIN 20
 #define THICKNESS 3
-
-typedef struct {
-    int x, y;
-} Coord;
-
-typedef struct {
-    int kind;
-
-    Coord h[WIDTH * HEIGHT]; size_t hc;
-    Coord v[WIDTH * HEIGHT]; size_t vc;
-    Coord i[WIDTH * HEIGHT]; size_t ic;
-} Piece;
 
 static const int colors[][3] = {
     {255,   0,   0},
@@ -153,6 +196,7 @@ void draw_solution(Piece *pieces, int count, const char *filename)
 
     fclose(f);
 }
+
 
 int cmp_piece(const void *a, const void *b)
 {

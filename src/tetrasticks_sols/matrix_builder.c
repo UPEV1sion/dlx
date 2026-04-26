@@ -76,7 +76,7 @@ static char *pieces[] = {
 #define NMAND (NUM_PIECES + NUM_H + NUM_V)
 #define NCOLS (NMAND + NUM_I)
 // TODO get rid of this error prone constant
-#define NROWS 1652
+#define NROWS 1409
 
 int H_index(const Coord c)
 {
